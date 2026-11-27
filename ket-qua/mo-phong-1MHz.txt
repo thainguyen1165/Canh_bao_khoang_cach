@@ -1,0 +1,18 @@
+VCD info: dumpfile build/obstacle_warning.vcd opened for output.
+Simulation clock: 1 MHz
+PASS  Echo already high at startup     level=3 valid=0
+PASS  80 cm                            level=0 valid=1
+PASS  50 cm + 1 us                     level=0 valid=1
+PASS  50 cm boundary                   level=1 valid=1
+PASS  20 cm + 1 us                     level=1 valid=1
+PASS  20 cm boundary                   level=2 valid=1
+PASS  2 cm lower limit                 level=2 valid=1
+PASS  Below 2 cm                       level=3 valid=0
+PASS  400 cm upper limit               level=0 valid=1
+PASS  Above 400 cm                     level=3 valid=0
+PASS  Missing echo                     level=3 valid=0
+PASS  Stuck-high echo timeout          level=3 valid=0
+PASS  High echo inhibits next trigger  level=3 valid=0
+PASS  Recovery after timeout           level=1 valid=1
+PASS: 14 scenarios plus reset and TRIG timing checks
+sim/tb_obstacle_warning.v:114: $finish called at 847251000000 (1ps)
