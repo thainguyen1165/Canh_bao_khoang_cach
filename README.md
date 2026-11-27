@@ -35,23 +35,27 @@ Với clock 50 MHz, một chu kỳ dài 20 ns. Xung Trig dài 500 chu kỳ, ngư
 
 Mỗi lần có kết quả, kể cả lỗi, `result_ready` lên cao một chu kỳ clock. `level` và `valid` giữ giá trị đến lần cập nhật sau. Sau reset, hệ thống hiển thị trạng thái chưa có phép đo. Hai flip-flop nối tiếp giảm nguy cơ siêu ổn định khi lấy mẫu Echo bất đồng bộ. Phép đo có sai số lượng tử theo chu kỳ clock và công thức khoảng cách chỉ là xấp xỉ.
 
-## 3. Giao diện đồ họa
+## 3. Giao diện đồ họa trên macOS và Windows
 
-Từ thư mục dự án, chạy:
+Giải nén hoặc clone repository, rồi mở Terminal/PowerShell tại thư mục chứa `run.py`. Cần Python 3.9 trở lên và Icarus Verilog. Xác nhận hai lệnh `iverilog -V` và `vvp -V` chạy được trong cửa sổ hiện tại.
 
-```sh
-make gui
-```
+| Hệ điều hành | Cài công cụ | Mở giao diện |
+|---|---|---|
+| macOS | Cài Python 3 nếu cần. Với Homebrew, chạy `brew install icarus-verilog`. | `python3 run.py` |
+| Windows | Cài Python và Icarus Verilog cho Windows. Thêm thư mục `bin` của Icarus vào PATH khi cài, rồi mở lại PowerShell. | `py run.py` |
 
-Kéo thanh trượt hoặc nhập khoảng cách từ 2 đến 400 cm rồi nhấn Enter. Mỗi lần thay đổi, giao diện chạy mô phỏng Verilog ở 1 MHz và đọc trực tiếp trạng thái ba LED và còi. Ô **Giả lập mất Echo** kiểm tra trạng thái lỗi. Giao diện hiển thị trạng thái còi bằng chữ.
+- [Python cho Windows](https://www.python.org/downloads/windows/) và [Python cho macOS](https://www.python.org/downloads/macos/)
+- [Bộ cài Icarus Verilog cho Windows](https://bleyer.org/icarus/) và [gói Homebrew cho macOS](https://formulae.brew.sh/formula/icarus-verilog)
 
-Giao diện dùng SwiftUI trên macOS 14 trở lên và cần Swift từ Xcode Command Line Tools. Icarus Verilog cần có sẵn trong PATH. Sau khi biên dịch, bạn cũng có thể mở `build/CanhBaoVatCan.app` từ Finder nếu đã cài Icarus Verilog qua Homebrew.
+Trình duyệt mặc định sẽ mở giao diện. Nếu cần, mở địa chỉ `http://127.0.0.1:…/` hiện trong Terminal. Kéo thanh trượt hoặc nhập khoảng cách từ 2 đến 400 cm rồi nhấn Enter. Mỗi phép đo gọi Icarus Verilog tại 1 MHz và đọc trạng thái LED, còi trực tiếp từ mạch. Chọn **Giả lập mất Echo** để thử báo lỗi. Nhấn Ctrl+C trong Terminal để dừng.
+
+GitHub lưu mã nguồn dự án. Sau khi tải mã về, chạy `run.py` trên máy để có cả giao diện lẫn trình mô phỏng. Giao diện SwiftUI riêng trên macOS vẫn có thể mở bằng `make gui` nếu có Xcode Command Line Tools và macOS 14 trở lên.
 
 ## 4. Chạy mô phỏng kiểm thử
 
-Cần Icarus Verilog và Make. Trên macOS có Homebrew, chạy `brew install icarus-verilog`. [Gói Icarus Verilog cho Homebrew](https://formulae.brew.sh/formula/icarus-verilog)
+Trên macOS, chạy `python3 run.py --test`. Trên Windows, chạy `py run.py --test`. Thêm `--clock 50` để kiểm thử ở 50 MHz.
 
-Từ thư mục dự án:
+Nếu có Make, bạn cũng có thể chạy từ thư mục dự án:
 
 ```sh
 make sim                 # Chạy nhanh ở 1 MHz

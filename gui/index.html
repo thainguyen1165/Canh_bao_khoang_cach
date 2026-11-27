@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cảnh báo vật cản</title>
+  <style>
+    :root { color-scheme: light; --ink:#162938; --muted:#4b6475; --line:#d9e4eb; --accent:#126b78; --active:#126b78; font: 16px/1.5 system-ui,sans-serif; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#eff4f7; color:var(--ink); }
+    main { width:min(760px,100%); margin:auto; padding:clamp(20px,5vw,52px) clamp(16px,4vw,30px); display:grid; gap:16px; }
+    h1 { font-size:clamp(1.9rem,5vw,2.7rem); letter-spacing:-.04em; line-height:1.15; margin:0 0 6px; }
+    h2 { margin:0; font-size:1.3rem; color:var(--active); }
+    p { margin:0; color:var(--muted); }
+    section { background:white; border:1px solid var(--line); border-radius:16px; padding:clamp(14px,3vw,22px); }
+    .row { display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap; }
+    .strong { font-weight:650; }
+    input { accent-color:var(--accent); }
+    input[type=number] { width:5.3em; padding:6px; font:inherit; text-align:right; border:1px solid #a3b7c3; border-radius:6px; }
+    input[type=range] { display:block; width:100%; margin:14px 0 3px; }
+    .bounds { color:var(--muted); font-size:.85rem; }
+    .check { display:inline-flex; align-items:center; gap:7px; margin-top:12px; }
+    .diagram { margin:18px 0 0; position:relative; height:122px; background:#f3f7fa; border-radius:10px; --position:19.6%; }
+    .track { position:absolute; left:86px; right:36px; top:58px; height:0; border-top:2px dashed #aec1cd; }
+    .track::before { content:""; position:absolute; inset:-2px auto auto 0; width:var(--position); border-top:2px dashed var(--active); }
+    .sensor,.obstacle { position:absolute; top:-21px; display:grid; justify-items:center; gap:6px; transform:translateX(-50%); white-space:nowrap; font-size:.8rem; color:var(--muted); }
+    .sensor { left:-43px; top:-16px; }
+    .sensor i { display:flex; align-items:center; gap:6px; background:var(--accent); border-radius:7px; padding:7px; }
+    .sensor i::before,.sensor i::after { content:""; width:16px; height:16px; background:#e2eff2; border-radius:50%; }
+    .obstacle { left:var(--position); }
+    .obstacle i { width:16px; height:38px; background:var(--active); border-radius:4px; }
+    .obstacle strong { position:absolute; bottom:100%; margin-bottom:4px; color:var(--ink); }
+    .signals { list-style:none; margin:14px 0 0; padding:0; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .signals li { display:grid; gap:2px; padding:9px; background:#edf2f5; border-radius:8px; }
+    .signals li[data-on=true] { background:var(--tint); }
+    .signals strong { display:flex; align-items:center; gap:6px; font-size:.88rem; }
+    .signals strong::before { content:""; width:9px; height:9px; background:#9aadb9; border-radius:50%; }
+    .signals li[data-on=true] strong::before { background:var(--lamp); }
+    .signals span { color:var(--muted); font-size:.87rem; }
+    @media(max-width:440px) { .signals { grid-template-columns:repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Cảnh báo vật cản</h1>
+      <p>HC-SR04 · Mô phỏng Verilog 1 MHz</p>
+    </header>
+    <section aria-label="Điều khiển mô phỏng">
+      <div class="row">
+        <label for="distance" class="strong">Khoảng cách vật cản</label>
+        <div><input id="distance" type="number" min="2" max="400" step="1" value="80" aria-describedby="unit"> <span id="unit">cm</span></div>
+      </div>
+      <input id="slider" type="range" min="2" max="400" value="80" aria-label="Khoảng cách vật cản (cm)">
+      <div class="row bounds"><span>2 cm</span><span>400 cm</span></div>
+      <label class="check"><input id="no-echo" type="checkbox"> Giả lập mất Echo</label>
+      <div class="diagram" id="diagram" aria-hidden="true">
+        <div class="track">
+          <div class="sensor"><i></i>HC-SR04</div>
+          <div class="obstacle"><strong id="scene-distance">80 cm</strong><i></i>Vật cản</div>
+        </div>
+      </div>
+    </section>
+    <section aria-label="Kết quả mô phỏng">
+      <div aria-live="polite">
+        <h2 id="status">Đang mô phỏng…</h2>
+        <p id="detail"></p>
+      </div>
+      <ul class="signals" id="signals">
+        <li style="--lamp:#07744f;--tint:#e5f6ee"><strong>LED xanh</strong><span>—</span></li>
+        <li style="--lamp:#a16a04;--tint:#fff1d1"><strong>LED vàng</strong><span>—</span></li>
+        <li style="--lamp:#b92d34;--tint:#fbe8e8"><strong>LED đỏ</strong><span>—</span></li>
+        <li style="--lamp:#b92d34;--tint:#fbe8e8"><strong>Còi</strong><span>—</span></li>
+      </ul>
+    </section>
+  </main>
+  <script>
+    const slider = document.querySelector("#slider");
+    const distance = document.querySelector("#distance");
+    const noEcho = document.querySelector("#no-echo");
+    const diagram = document.querySelector("#diagram");
+    const sceneDistance = document.querySelector("#scene-distance");
+    const statusLabel = document.querySelector("#status");
+    const detail = document.querySelector("#detail");
+    const signals = [...document.querySelectorAll("#signals li")];
+    const labels = ["An toàn", "Cảnh báo", "Nguy hiểm", "Lỗi Echo"];
+    const colors = ["#07744f", "#865704", "#b92d34", "#734a98"];
+    const format = new Intl.NumberFormat("vi-VN");
+    let timer;
+    let revision = 0;
+
+    function showSignals(outputs = []) {
+      signals.forEach((signal, index) => {
+        const active = outputs[index];
+        signal.dataset.on = active === true;
+        signal.querySelector("span").textContent = active === undefined ? "—" : active ? "Bật" : "Tắt";
+      });
+    }
+
+    function schedule() {
+      const request = ++revision;
+      const cm = Number(slider.value);
+      diagram.style.setProperty("--position", ((cm - 2) / 398 * 100) + "%");
+      sceneDistance.textContent = cm + " cm";
+      statusLabel.textContent = "Đang mô phỏng…";
+      detail.textContent = "";
+      document.documentElement.style.setProperty("--active", "#126b78");
+      showSignals();
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try {
+          const response = await fetch("/api/measure?distance=" + cm + "&no_echo=" + Number(noEcho.checked));
+          const result = await response.json();
+          if (request !== revision) return;
+          if (!response.ok) throw new Error(result.error);
+          statusLabel.textContent = labels[result.level];
+          detail.textContent = result.valid
+            ? "Độ rộng xung Echo · " + format.format(result.echo_us) + " µs"
+            : "Không nhận được xung Echo hợp lệ.";
+          document.documentElement.style.setProperty("--active", colors[result.level]);
+          showSignals(result.outputs);
+        } catch (error) {
+          if (request !== revision) return;
+          statusLabel.textContent = "Không chạy được mô phỏng";
+          detail.textContent = error.message;
+        }
+      }, 75);
+    }
+
+    function applyDistance() {
+      const value = distance.valueAsNumber;
+      const next = Number.isFinite(value) ? Math.min(400, Math.max(2, Math.round(value))) : slider.value;
+      slider.value = next;
+      distance.value = next;
+      schedule();
+    }
+
+    slider.addEventListener("input", () => {
+      distance.value = slider.value;
+      schedule();
+    });
+    distance.addEventListener("change", applyDistance);
+    distance.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") applyDistance();
+    });
+    noEcho.addEventListener("change", schedule);
+    schedule();
+  </script>
+</body>
+</html>
